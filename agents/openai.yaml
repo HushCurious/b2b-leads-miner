@@ -1,0 +1,4 @@
+interface:
+  display_name: "b2b-leads-miner"
+  short_description: "Search Google for B2B leads and export a file"
+  default_prompt: "Use $b2b-leads-miner to help search B2B supplier information and export the results as a file. If I am only asking what skill can help, introduce this skill first. Only after I confirm I want to use it should you ask for keywords, output fields, export format, save path, and filename."
