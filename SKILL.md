@@ -43,9 +43,42 @@ Use this skill when the user asks to:
 - extract company data into a reusable file
 - export the result in Excel or another user-requested format
 
-If the user is only asking what skills are available, or which skill can help with supplier search, do not start the intake workflow yet.
+## Stage Control
 
-In that case, only introduce `b2b-leads-miner` as the relevant skill and wait for the user to confirm that they want to use it.
+Treat the interaction as having exactly 2 stages:
+
+- `recommendation`
+- `intake`
+
+### `recommendation`
+
+Use `recommendation` only when the user is asking which skill can help, what skills are available, or whether there is a skill for supplier search.
+
+Required behavior in `recommendation`:
+
+- Recommend `b2b-leads-miner`.
+- Briefly state what it helps with.
+- Stop.
+
+Forbidden behavior in `recommendation`:
+
+- Do not ask any question.
+- Do not ask for product, market, country, quantity, format, path, filename, or any other setup detail.
+- Do not include intake, execution guidance, examples, defaults, or next-step prompts.
+- Do not say or imply "reply with these details" or "just answer these few questions".
+
+### `intake`
+
+Enter `intake` when either of these is true:
+
+- the user explicitly chooses `b2b-leads-miner`
+- the user directly asks the assistant to help find suppliers or do the supplier-search task
+
+Required behavior in `intake`:
+
+- Always follow [references/intake-workflow.md](references/intake-workflow.md) in order.
+- Do not skip the opening message.
+- Do not jump directly to later questions.
 
 Do not use this skill for:
 
@@ -55,7 +88,7 @@ Do not use this skill for:
 
 ## Execution Workflow
 
-Start this workflow only after the user has clearly chosen to use `b2b-leads-miner` for the task.
+Start this workflow only after the interaction has entered `intake` as defined above.
 
 1. Follow [references/intake-workflow.md](references/intake-workflow.md) to collect the user's search goal, keywords, market, limits, output fields, format, save path, and filename.
 2. Use [references/lead-spec.md](references/lead-spec.md) to turn the request into a clean execution spec.
@@ -81,7 +114,8 @@ Never fabricate:
 
 Keep the interaction simple and guided. The target user may be new to AI tools, short on time, and easily overloaded by too many choices.
 
-- If the user is still choosing a skill, keep the response at the recommendation level and do not jump into execution questions.
+- In `recommendation`, stay at recommendation level only.
+- In `intake`, follow the question order from `references/intake-workflow.md` and ask only the current step.
 - ask short concrete questions
 - avoid jargon
 - suggest defaults when the user is unsure

@@ -2,9 +2,100 @@
 
 Use this reference before any lead-mining run. The goal is to ask the user the right questions in a simple, friendly way, confirm the setup, and avoid starting a search with missing or ambiguous requirements.
 
-Only use this intake workflow after the user has already decided to use `b2b-leads-miner`.
+## Stage Gate
 
-If the user is only asking what skills are available, or which skill can help with supplier search, do not start asking these intake questions yet.
+Use this gate before sending any intake reply.
+
+### Stage 1: Recommendation
+
+Use `recommendation` only when the user is asking things like:
+
+- "你有什么 skills 可以帮我"
+- "哪个 skill 适合找供应商"
+- "有没有可以做 supplier search 的 skill"
+
+Rules in `recommendation`:
+
+- Only recommend the skill.
+- Do not ask any intake question.
+- Do not ask for product, market, quantity, format, path, filename, or any other setup detail.
+- Do not say "你只要回我 3 个信息就行" or any similar shortcut.
+- Do not provide execution guidance, defaults, examples, or next-step prompts.
+- End the reply immediately after the recommendation.
+
+### Stage 2: Intake
+
+Enter `intake` when either of these is true:
+
+- the user explicitly says to use `b2b-leads-miner`
+- the user directly asks the assistant to help find suppliers, search suppliers, or do the supplier-search task
+
+Examples that count as entering `intake`:
+
+- "用 b2b-leads-miner 帮我找"
+- "我想要找供应商信息，你帮我"
+- "帮我搜澳洲市场的供应商"
+
+Rules in `intake`:
+
+- The first intake reply must start with the opening message.
+- The first intake reply must contain the opening message only.
+- Do not combine the opening message with the language question.
+- The language question can only appear in the next reply, after the opening message has been shown.
+- After that, ask one question at a time in the documented order.
+- Do not skip ahead.
+
+## Deterministic Reply Contract
+
+Use these output contracts exactly.
+
+### Contract A: Recommendation-only reply
+
+Use this when the user is still asking which skill can help.
+
+Allowed content:
+
+- skill name
+- one short description of what it does
+
+Not allowed:
+
+- any question
+- any bullet list of required user inputs
+- any intake shortcut
+- any transition into setup
+
+Example shape:
+
+- "`b2b-leads-miner` 最适合这个任务。它可以帮你搜索公开网页里的供应商信息，并整理成结构化结果。"
+
+### Contract B: First intake reply
+
+Use this when the user has already chosen the skill or directly asked for supplier help.
+
+Allowed content:
+
+- opening message only
+
+Not allowed:
+
+- language question
+- product question
+- any other intake question
+
+Example shape:
+
+- "我先问你几个很简单的小问题，帮你把这次搜索设置好。这样我后面搜出来的结果会更贴近你的习惯，也方便你下次继续复用。整个确认一般几分钟就可以。"
+
+### Contract C: Second intake reply
+
+Allowed content:
+
+- language question only
+
+Example shape:
+
+- "我们继续用中文聊?"
 
 ## Tone
 
@@ -42,6 +133,7 @@ Start with a short, reassuring opening before asking questions.
 Do not skip the opening message in a real user conversation.
 Do not jump directly to the language question.
 For beginner users, the opening message is required because it lowers anxiety and explains why the questions are being asked.
+The opening message is a standalone reply. It is not combined with any intake question.
 
 Suggested opening:
 
@@ -64,6 +156,12 @@ Use this when starting a real user conversation. The goal is to sound practical,
 
 In a real run, follow the sequence from `Opening` to `Language` to the remaining questions.
 Do not start at `Language` unless the user has already seen and acknowledged the opening.
+
+Mandatory sequence:
+
+1. Reply 1: opening only
+2. Reply 2: language only
+3. Reply 3 onward: continue one question at a time
 
 ### Recommended Script
 
@@ -103,8 +201,10 @@ Do not start at `Language` unless the user has already seen and acknowledged the
 
 7. Export format
 
-- `CN`: "结果你想要什么格式？"
-- `EN`: "What format would you like for the final result?"
+- `CN`: "结果你想要什么格式？如果你不确定，我可以先给你几个常见选项：`Excel (.xlsx)` 适合筛选和继续整理，`CSV` 适合导入系统或继续处理，`Markdown` 适合直接看文本结果，`JSON` 适合程序处理，`TXT` 适合最简单的纯文本保存。"
+- `EN`: "What format would you like for the final result? If you're not sure, here are some common options: `Excel (.xlsx)` is good for filtering and further editing, `CSV` is good for importing into other systems, `Markdown` is good for reading as text, `JSON` is good for programmatic use, and `TXT` is the simplest plain-text option."
+- `CN`: "如果你没特别偏好，我通常会建议用 `Excel (.xlsx)`。"
+- `EN`: "If you don't have a preference, I usually recommend `Excel (.xlsx)`."
 
 8. Save path and filename
 
@@ -119,7 +219,7 @@ Use this when the user wants to move fast, but still keep the same confirmation 
 - "你要在 Google 搜什么产品？pls provide the search term, 还是你想先听我的建议？"
 - "你这次想怎么限制搜索范围？要我按多少家公司来整理，还是按 Google 前几页来搜？"
 - "输出字段这边，我会先按默认字段给你看；如果你能接受，我就直接按那套走，不行再改。"
-- "结果要什么格式？文件存哪里，文件名叫什么？"
+- "结果要什么格式？如果你不确定，我可以直接先用 `Excel (.xlsx)`。文件存哪里，文件名叫什么？"
 
 ### More Supportive Version
 
@@ -157,12 +257,23 @@ Close with:
 
 - Ask short, concrete questions.
 - Ask one thing at a time.
+- Ask in the exact stage order above.
 - If the user already answered something, do not ask again.
 - Suggest a default when the user is unsure.
 - Confirm user-controlled limits instead of deciding for them.
 - Treat output path and filename as mandatory before export.
 - Separate conversation language from exported file language.
 - Do not present the intake like a long form the user must complete in one go.
+
+## Self-Check Before Sending
+
+Before sending a reply, check:
+
+1. Is the user still choosing a skill, or have they already asked me to do the supplier-search task?
+2. If still choosing a skill: send Contract A only.
+3. If intake just started: send Contract B only.
+4. If opening was already sent: send Contract C or the next single unanswered question only.
+5. If the draft contains more than one question, rewrite it.
 
 ## Recommended Question Style
 
@@ -175,6 +286,7 @@ Good style:
 - "你想让我看每个关键词的前几页 Google 结果？比如前 3 页、前 5 页，还是前 10 页。"
 - "你最后想让我整理多少条给你？比如先给你 20 家、50 家，还是 100 家。"
 - "字段这边我会逐项帮你确认，你可以告诉我哪些要留，哪些不要。"
+- "结果格式如果你不确定，我可以先给你几个常见选项，比如 `Excel (.xlsx)`、`CSV`、`Markdown`、`JSON`、`TXT`，并顺手告诉你各自适合拿来做什么。"
 
 Avoid style like:
 
